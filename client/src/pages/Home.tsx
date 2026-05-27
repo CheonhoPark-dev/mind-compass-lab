@@ -835,7 +835,7 @@ export default function Home() {
 
                               {/* 리커트 5점 척도 버튼 */}
                               <div className="pt-2">
-                                <div className="grid grid-cols-5 gap-2 md:gap-4 max-w-xl mx-auto">
+                                <div className="grid grid-cols-5 gap-2 md:gap-4 max-w-sm md:max-w-xl mx-auto">
                                   {[1, 2, 3, 4, 5].map((score) => {
                                     const scoreLabels = ["전혀 그렇지 않다", "대체로 그렇지 않다", "보통이다", "대체로 그렇다", "매우 그렇다"];
                                     const isSelected = currentAnswer === score;
@@ -860,18 +860,18 @@ export default function Home() {
                                         key={score}
                                         type="button"
                                         onClick={() => handleAnswerSelect(q.id, score)}
-                                        className={`flex flex-col items-center justify-start gap-2.5 p-3 rounded-2xl border text-center transition-all h-24 md:h-28 overflow-hidden transition-spring active-spring ${
+                                        className={`flex flex-col items-center justify-center md:justify-start gap-0 md:gap-2.5 p-1.5 md:p-3 rounded-full md:rounded-2xl border-2 text-center transition-all h-12 sm:h-14 md:h-28 overflow-hidden transition-spring active-spring ${
                                           isSelected 
-                                            ? `${getActiveColors()} font-bold scale-[1.03] shadow-md border-2` 
+                                            ? `${getActiveColors()} font-bold scale-[1.03] shadow-md` 
                                             : "border-border/60 bg-background text-muted-foreground/90 hover:bg-secondary/40 hover:border-border"
                                         }`}
                                       >
                                         <div className={`rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
                                           score === 3 
-                                            ? "w-7 h-7 text-xs" 
+                                            ? "w-7 h-7 text-xs md:w-7 md:h-7" 
                                             : score === 1 || score === 5 
-                                            ? "w-9 h-9 text-sm" 
-                                            : "w-8 h-8 text-xs"
+                                            ? "w-8 h-8 text-sm md:w-9 md:h-9" 
+                                            : "w-7 h-7 text-xs md:w-8 md:h-8"
                                         } ${getCircleColors()} ${isSelected ? "scale-110" : ""}`}>
                                           {score}
                                         </div>
