@@ -1,0 +1,11 @@
+{
+  "buildCommand": "corepack pnpm build",
+  "installCommand": "corepack pnpm install",
+  "outputDirectory": "dist/public",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
