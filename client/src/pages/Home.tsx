@@ -658,9 +658,6 @@ export default function Home() {
                                   </div>
                                 )}
                               </div>
-                              <p className="text-[10px] text-muted-foreground/80">
-                                * 체험용 무료 코드 예시: <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-primary font-bold">마음나침반</code>, <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-primary font-bold">COMPASS</code>
-                              </p>
                             </div>
                           </motion.div>
                         )}
