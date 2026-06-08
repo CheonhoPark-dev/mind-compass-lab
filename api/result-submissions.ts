@@ -1,11 +1,11 @@
 import { get, list, put } from "@vercel/blob";
 import { randomUUID } from "node:crypto";
-import { RESULT_SUBMISSIONS_PREFIX } from "../shared/resultSubmissions";
 import type {
   ResultSubmission,
   ResultSubmissionPayload,
-} from "../shared/resultSubmissions";
+} from "../shared/resultSubmissions.ts";
 
+const RESULT_SUBMISSIONS_PREFIX = "mind-compass-lab/result-submissions/";
 const MAX_BODY_BYTES = 1024 * 1024;
 const DEFAULT_LIMIT = 200;
 const MAX_LIMIT = 500;
@@ -251,10 +251,13 @@ async function withApiErrors(callback: () => Promise<Response>) {
   } catch (error) {
     console.error(error);
 
-    const message =
+    const rawMessage =
       error instanceof Error
         ? error.message
         : "결과 제출 처리 중 문제가 발생했습니다.";
+    const message = rawMessage.includes("No blob credentials found")
+      ? "Vercel Blob 연결 환경변수(BLOB_READ_WRITE_TOKEN)가 설정되지 않았습니다. Vercel Storage와 프로젝트 연결 상태를 확인해주세요."
+      : rawMessage;
 
     return jsonResponse({ error: message }, { status: 500 });
   }
@@ -267,3 +270,20 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   return withApiErrors(() => handleGet(request));
 }
+
+export default {
+  fetch(request: Request) {
+    if (request.method === "POST") {
+      return POST(request);
+    }
+
+    if (request.method === "GET") {
+      return GET(request);
+    }
+
+    return jsonResponse(
+      { error: "지원하지 않는 요청 방식입니다." },
+      { status: 405, headers: { Allow: "GET, POST" } }
+    );
+  },
+};
