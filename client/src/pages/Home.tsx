@@ -7,6 +7,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -37,11 +45,14 @@ import {
   ChevronUp,
   CreditCard,
   X,
-  Loader2
+  Loader2,
+  Send,
+  Phone
 } from "lucide-react";
 import { QUESTIONS, ENNEAGRAM_TYPES, EnneagramTypeInfo } from "../lib/questions";
 import { WINGS_DATA, EnneagramWingInfo } from "../lib/wings";
 import { ENNEAGRAM_TYPE_REPORTS } from "../lib/typeReports";
+import type { ResultSubmissionPayload } from "@shared/resultSubmissions";
 import { 
   LineChart, 
   Line, 
@@ -61,6 +72,11 @@ interface UserInfo {
   birthDate: string; // 생년월일 8자리 (예: 19980527)
   agreePrivacy: boolean;
   promoCode: string;
+}
+
+interface CounselorShareForm {
+  counselorName: string;
+  respondentPhone: string;
 }
 
 interface ChartDataPoint {
@@ -94,6 +110,12 @@ export default function Home() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>("toss");
   const [isPaying, setIsPaying] = useState(false);
+  const [isCounselorDialogOpen, setIsCounselorDialogOpen] = useState(false);
+  const [isSendingToCounselor, setIsSendingToCounselor] = useState(false);
+  const [counselorForm, setCounselorForm] = useState<CounselorShareForm>({
+    counselorName: "",
+    respondentPhone: ""
+  });
   
   const itemsPerPage = 5;
 
@@ -391,6 +413,106 @@ export default function Home() {
     });
   };
 
+  const buildCounselorSubmission = (
+    counselorName: string,
+    respondentPhone: string
+  ): ResultSubmissionPayload | null => {
+    if (!testResults) return null;
+
+    return {
+      counselorName,
+      respondentPhone,
+      participant: {
+        name: userInfo.name.trim(),
+        birthDate: userInfo.birthDate,
+        age: calculatedAge
+      },
+      result: {
+        primaryType: testResults.primaryType,
+        primaryTypeName: testResults.primaryTypeInfo.name,
+        primaryTypeTitle: testResults.primaryTypeInfo.title,
+        wingType: testResults.wingType,
+        wingCode: testResults.wingCode,
+        wingName: testResults.wingInfo.name,
+        wingTitle: testResults.wingInfo.title,
+        typeScores: testResults.typeScores,
+        rankedTypes: rankedTypes.map((item) => ({
+          type: item.type,
+          name: item.info.name,
+          title: item.info.title,
+          score: item.score
+        })),
+        centers: centerBreakdown.map((center) => ({
+          label: center.label,
+          theme: center.theme,
+          score: center.score,
+          percent: center.percent
+        })),
+        report: detailedReport
+          ? {
+              title: detailedReport.reportTitle,
+              tagline: detailedReport.tagline,
+              summary: detailedReport.summary
+            }
+          : null
+      },
+      answers,
+      submittedFrom: window.location.href
+    };
+  };
+
+  const handleCounselorSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const counselorName = counselorForm.counselorName.trim();
+    const respondentPhone = counselorForm.respondentPhone.trim();
+    const phoneDigits = respondentPhone.replace(/\D/g, "");
+
+    if (counselorName.length < 2) {
+      toast.error("담당 상담사 이름을 2자 이상 입력해주세요.");
+      return;
+    }
+
+    if (phoneDigits.length < 8 || phoneDigits.length > 15) {
+      toast.error("설문자 전화번호를 정확히 입력해주세요.");
+      return;
+    }
+
+    const submission = buildCounselorSubmission(counselorName, respondentPhone);
+    if (!submission) {
+      toast.error("저장할 결과 데이터를 찾을 수 없습니다.");
+      return;
+    }
+
+    setIsSendingToCounselor(true);
+
+    try {
+      const response = await fetch("/api/result-submissions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(submission)
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.error ?? "상담사 전송 저장에 실패했습니다.");
+      }
+
+      toast.success("상담사에게 전달할 결과가 저장되었습니다. /result에서 확인할 수 있어요.");
+      setIsCounselorDialogOpen(false);
+      setCounselorForm({
+        counselorName,
+        respondentPhone: ""
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "상담사 전송 저장에 실패했습니다.");
+    } finally {
+      setIsSendingToCounselor(false);
+    }
+  };
+
   // 테스트 리셋
   const handleReset = () => {
     setAnswers({});
@@ -406,6 +528,12 @@ export default function Home() {
     setIsPaymentModalOpen(false);
     setSelectedPaymentMethod("toss");
     setIsPaying(false);
+    setIsCounselorDialogOpen(false);
+    setIsSendingToCounselor(false);
+    setCounselorForm({
+      counselorName: "",
+      respondentPhone: ""
+    });
   };
 
   // Framer Motion 슬라이드 전환 설정
@@ -1403,7 +1531,14 @@ export default function Home() {
 
               {/* 결과 공유 및 다시하기 푸터 액션 */}
               <div className="flex flex-col md:flex-row gap-4 pt-4">
-                <Button 
+                <Button
+                  onClick={() => setIsCounselorDialogOpen(true)}
+                  className="flex-1 h-14 text-sm font-bold rounded-2xl bg-accent hover:bg-accent/90 text-accent-foreground gap-2 shadow-md transition-spring active-spring"
+                >
+                  <Send className="w-5 h-5" />
+                  상담사에게 보내기
+                </Button>
+                <Button
                   onClick={handleShare} 
                   variant="outline"
                   className="flex-1 h-14 text-sm font-bold rounded-2xl border-border hover:bg-secondary/40 gap-2 transition-spring active-spring"
@@ -1424,6 +1559,125 @@ export default function Home() {
 
         </div>
       </main>
+
+      <Dialog
+        open={isCounselorDialogOpen}
+        onOpenChange={(open) => {
+          if (!isSendingToCounselor) setIsCounselorDialogOpen(open);
+        }}
+      >
+        <DialogContent className="max-w-md rounded-3xl border-border bg-card p-0 shadow-2xl overflow-hidden">
+          <form onSubmit={handleCounselorSubmit}>
+            <DialogHeader className="border-b border-border bg-secondary/20 p-6 text-left">
+              <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-2xl border border-accent/20 bg-accent/10 text-accent">
+                <Send className="h-5 w-5" />
+              </div>
+              <DialogTitle className="text-xl font-extrabold text-foreground">
+                상담사에게 결과 보내기
+              </DialogTitle>
+              <DialogDescription className="text-xs leading-relaxed text-muted-foreground">
+                담당 상담사 이름과 설문자 전화번호를 입력하면 현재 검사 결과가 Vercel Blob에 저장되고 `/result`에서 확인할 수 있습니다.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-5 p-6">
+              <div className="space-y-2">
+                <Label htmlFor="counselorName" className="text-sm font-bold text-foreground">
+                  담당 상담사 이름
+                </Label>
+                <div className="relative">
+                  <UserCheck className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="counselorName"
+                    type="text"
+                    value={counselorForm.counselorName}
+                    onChange={(event) =>
+                      setCounselorForm((prev) => ({
+                        ...prev,
+                        counselorName: event.target.value
+                      }))
+                    }
+                    placeholder="예: 김나침 상담사"
+                    className="h-12 rounded-xl border-border bg-background pl-9"
+                    disabled={isSendingToCounselor}
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="respondentPhone" className="text-sm font-bold text-foreground">
+                  설문자 전화번호
+                </Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="respondentPhone"
+                    type="tel"
+                    inputMode="tel"
+                    value={counselorForm.respondentPhone}
+                    onChange={(event) =>
+                      setCounselorForm((prev) => ({
+                        ...prev,
+                        respondentPhone: event.target.value
+                      }))
+                    }
+                    placeholder="예: 010-1234-5678"
+                    className="h-12 rounded-xl border-border bg-background pl-9"
+                    disabled={isSendingToCounselor}
+                  />
+                </div>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  전화번호는 상담사가 설문자를 식별하고 연락하기 위한 용도로 결과와 함께 저장됩니다.
+                </p>
+              </div>
+
+              {testResults && (
+                <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
+                  <p className="text-[11px] font-extrabold uppercase tracking-wider text-primary">
+                    저장될 결과 요약
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-foreground">
+                    {userInfo.name || "설문자"} · {testResults.wingCode} {testResults.wingInfo.name}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    주유형 {testResults.primaryType}유형, 날개 {testResults.wingType}유형, 81문항 답변 포함
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter className="border-t border-border bg-secondary/10 p-4 sm:justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCounselorDialogOpen(false)}
+                disabled={isSendingToCounselor}
+                className="h-11 rounded-xl font-bold"
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSendingToCounselor}
+                className="h-11 rounded-xl bg-accent px-5 font-bold text-accent-foreground hover:bg-accent/90"
+              >
+                {isSendingToCounselor ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    저장 중...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    저장하고 보내기
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* ==================== 5. 가상 간편결제 모달 팝업 ==================== */}
       <AnimatePresence>
