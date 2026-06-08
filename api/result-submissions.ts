@@ -140,22 +140,6 @@ function requestedAccessKey(request: Request) {
   return bearer || searchParams.get("key")?.trim() || "";
 }
 
-function maskPhone(phone: string) {
-  const digits = phone.replace(/\D/g, "");
-  const lastFour = digits.slice(-4);
-
-  return lastFour ? `***-****-${lastFour}` : "***-****";
-}
-
-function maybeRedact(submission: ResultSubmission, hasFullAccess: boolean) {
-  if (hasFullAccess) return submission;
-
-  return {
-    ...submission,
-    respondentPhone: maskPhone(submission.respondentPhone),
-  };
-}
-
 async function readSubmission(pathname: string): Promise<ResultSubmission | null> {
   const result = await get(pathname, { access: blobAccess });
 
@@ -175,7 +159,7 @@ async function handleGet(request: Request) {
   const accessKeyConfigured = accessKey.length > 0;
   const hasFullAccess = accessKeyConfigured
     ? requestedAccessKey(request) === accessKey
-    : false;
+    : true;
 
   if (accessKeyConfigured && !hasFullAccess) {
     return jsonResponse(
@@ -222,14 +206,11 @@ async function handleGet(request: Request) {
           const submission = await readSubmission(blob.pathname);
           if (!submission) return null;
 
-          return maybeRedact(
-            {
-              ...submission,
-              blobPathname: blob.pathname,
-              blobUrl: blob.url,
-            },
-            hasFullAccess
-          );
+          return {
+            ...submission,
+            blobPathname: blob.pathname,
+            blobUrl: blob.url,
+          };
         } catch {
           return null;
         }
@@ -256,7 +237,7 @@ async function withApiErrors(callback: () => Promise<Response>) {
         ? error.message
         : "결과 제출 처리 중 문제가 발생했습니다.";
     const message = rawMessage.includes("No blob credentials found")
-      ? "Vercel Blob 연결 환경변수(BLOB_READ_WRITE_TOKEN)가 설정되지 않았습니다. Vercel Storage와 프로젝트 연결 상태를 확인해주세요."
+      ? "결과 전송 설정이 완료되지 않았습니다. 관리자에게 문의해주세요."
       : rawMessage;
 
     return jsonResponse({ error: message }, { status: 500 });

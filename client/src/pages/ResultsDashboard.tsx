@@ -51,8 +51,7 @@ export default function ResultsDashboard() {
   );
   const [pendingAccessKey, setPendingAccessKey] = useState(accessKey);
   const [requiresAccessKey, setRequiresAccessKey] = useState(false);
-  const [accessKeyConfigured, setAccessKeyConfigured] = useState(false);
-  const [hasFullAccess, setHasFullAccess] = useState(false);
+  const [hasFullAccess, setHasFullAccess] = useState(true);
   const [query, setQuery] = useState("");
 
   const loadSubmissions = useCallback(
@@ -80,7 +79,6 @@ export default function ResultsDashboard() {
         setSubmissions(result.submissions);
         setTotal(result.total);
         setRequiresAccessKey(false);
-        setAccessKeyConfigured(result.accessKeyConfigured);
         setHasFullAccess(result.hasFullAccess);
 
         if (key) {
@@ -203,7 +201,7 @@ export default function ResultsDashboard() {
                 <div className="space-y-1">
                   <h2 className="text-lg font-extrabold text-foreground">결과 조회 접근키가 필요합니다</h2>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Vercel 환경변수 `RESULTS_ACCESS_KEY`에 설정된 키를 입력하면 저장된 결과를 확인할 수 있습니다.
+                    관리자에게 전달받은 접근키를 입력하면 수신된 결과를 확인할 수 있습니다.
                   </p>
                 </div>
               </div>
@@ -236,7 +234,7 @@ export default function ResultsDashboard() {
                 <CardContent className="p-5">
                   <p className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider">Total</p>
                   <p className="text-3xl font-extrabold text-primary mt-2">{total}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Blob에 저장된 전체 제출 수</p>
+                  <p className="text-xs text-muted-foreground mt-1">전체 수신 결과 수</p>
                 </CardContent>
               </Card>
               <Card className="rounded-3xl border-border bg-card shadow-sm">
@@ -254,14 +252,10 @@ export default function ResultsDashboard() {
                   <div className="mt-2 flex items-center gap-2">
                     <ShieldCheck className="w-5 h-5 text-primary" />
                     <p className="text-lg font-extrabold text-foreground">
-                      {hasFullAccess ? "전체 조회" : accessKeyConfigured ? "제한됨" : "마스킹"}
+                      {hasFullAccess ? "전체 조회" : "접근 제한"}
                     </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {hasFullAccess
-                      ? "전화번호 전체 표시 중"
-                      : "전화번호는 끝 4자리만 표시됩니다"}
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">전화번호 전체 표시 중</p>
                 </CardContent>
               </Card>
             </div>
@@ -275,7 +269,7 @@ export default function ResultsDashboard() {
               <div className="rounded-3xl border border-border bg-card p-10 text-center shadow-sm">
                 <UserCheck className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
                 <p className="text-base font-extrabold text-foreground">
-                  {submissions.length === 0 ? "아직 저장된 결과가 없습니다." : "검색 결과가 없습니다."}
+                  {submissions.length === 0 ? "아직 수신된 결과가 없습니다." : "검색 결과가 없습니다."}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   결과 화면에서 상담사에게 보내기를 누르면 이 목록에 추가됩니다.
@@ -352,7 +346,7 @@ export default function ResultsDashboard() {
                           className="h-11 rounded-xl gap-2 text-xs font-bold lg:w-32"
                         >
                           <Download className="w-4 h-4 text-primary" />
-                          JSON 저장
+                          JSON 다운로드
                         </Button>
                       </div>
                     </CardContent>

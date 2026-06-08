@@ -480,7 +480,7 @@ export default function Home() {
 
     const submission = buildCounselorSubmission(counselorName, respondentPhone);
     if (!submission) {
-      toast.error("저장할 결과 데이터를 찾을 수 없습니다.");
+      toast.error("전송할 결과 데이터를 찾을 수 없습니다.");
       return;
     }
 
@@ -497,17 +497,17 @@ export default function Home() {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(data?.error ?? "상담사 전송 저장에 실패했습니다.");
+        throw new Error(data?.error ?? "상담사 전송에 실패했습니다.");
       }
 
-      toast.success("상담사에게 전달할 결과가 저장되었습니다. /result에서 확인할 수 있어요.");
+      toast.success("상담사에게 전달할 결과가 접수되었습니다.");
       setIsCounselorDialogOpen(false);
       setCounselorForm({
         counselorName,
         respondentPhone: ""
       });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "상담사 전송 저장에 실패했습니다.");
+      toast.error(error instanceof Error ? error.message : "상담사 전송에 실패했습니다.");
     } finally {
       setIsSendingToCounselor(false);
     }
@@ -1576,7 +1576,7 @@ export default function Home() {
                 상담사에게 결과 보내기
               </DialogTitle>
               <DialogDescription className="text-xs leading-relaxed text-muted-foreground">
-                담당 상담사 이름과 설문자 전화번호를 입력하면 현재 검사 결과가 Vercel Blob에 저장되고 `/result`에서 확인할 수 있습니다.
+                담당 상담사 이름과 설문자 전화번호를 입력하면 현재 검사 결과가 상담사에게 전달됩니다.
               </DialogDescription>
             </DialogHeader>
 
@@ -1628,14 +1628,14 @@ export default function Home() {
                   />
                 </div>
                 <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  전화번호는 상담사가 설문자를 식별하고 연락하기 위한 용도로 결과와 함께 저장됩니다.
+                  전화번호는 상담사가 설문자를 식별하고 연락하기 위한 용도로 결과와 함께 전달됩니다.
                 </p>
               </div>
 
               {testResults && (
                 <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
                   <p className="text-[11px] font-extrabold uppercase tracking-wider text-primary">
-                    저장될 결과 요약
+                    전송될 결과 요약
                   </p>
                   <p className="mt-1 text-sm font-bold text-foreground">
                     {userInfo.name || "설문자"} · {testResults.wingCode} {testResults.wingInfo.name}
@@ -1665,12 +1665,12 @@ export default function Home() {
                 {isSendingToCounselor ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    저장 중...
+                    전송 중...
                   </>
                 ) : (
                   <>
                     <Send className="h-4 w-4" />
-                    저장하고 보내기
+                    상담사에게 보내기
                   </>
                 )}
               </Button>
