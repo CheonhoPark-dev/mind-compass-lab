@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import "./results-dashboard.css";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { Input } from "@/components/ui/input";
 import { buildSubmissionExport } from "@/lib/groupedAnswers";
 import { downloadTxt } from "@/lib/submissionTxt";
-import type { ResultSubmission, ResultSubmissionListResponse } from "@shared/resultSubmissions";
+import type {
+  ResultSubmission,
+  ResultSubmissionListResponse,
+} from "@shared/resultSubmissions";
 import {
   Compass,
   Download,
@@ -31,7 +34,10 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-export function downloadJson(submission: ResultSubmission, hasFullAccess: boolean) {
+export function downloadJson(
+  submission: ResultSubmission,
+  hasFullAccess: boolean
+) {
   const exported = buildSubmissionExport(submission, hasFullAccess);
   if (!exported) return;
   const blob = new Blob([JSON.stringify(exported, null, 2)], {
@@ -46,41 +52,66 @@ export function downloadJson(submission: ResultSubmission, hasFullAccess: boolea
   URL.revokeObjectURL(url);
 }
 
-export function TxtDownloadButton({ submission, hasFullAccess }: {
+export function TxtDownloadButton({
+  submission,
+  hasFullAccess,
+}: {
   submission: ResultSubmission;
   hasFullAccess: boolean;
 }) {
   return (
     <Button
       type="button"
-      variant="outline"
-      onClick={() => { if (hasFullAccess) downloadTxt(submission, hasFullAccess); }}
+      variant="default"
+      onClick={() => {
+        if (hasFullAccess) downloadTxt(submission, hasFullAccess);
+      }}
       disabled={!hasFullAccess}
-      className="h-11 rounded-xl gap-2 text-xs font-bold lg:w-32"
+      className="rd-txt h-11 gap-2 font-bold"
     >
-      <Download className="w-4 h-4 text-primary" />
+      <Download className="w-4 h-4" aria-hidden="true" />
       TXT 다운로드
     </Button>
   );
 }
 
-export function GroupedAnswerDetails({ answers, hasFullAccess }: {
+export function GroupedAnswerDetails({
+  answers,
+  hasFullAccess,
+}: {
   answers: ResultSubmission["answers"];
   hasFullAccess: boolean;
 }) {
-  const grouped = useMemo(() => buildSubmissionExport({ answers }, hasFullAccess), [answers, hasFullAccess]);
+  const grouped = useMemo(
+    () => buildSubmissionExport({ answers }, hasFullAccess),
+    [answers, hasFullAccess]
+  );
   if (!grouped) {
-    return <p className="mt-4 text-xs text-muted-foreground">문항별 응답은 전체 조회 권한이 필요합니다.</p>;
+    return (
+      <p className="mt-4 text-xs text-muted-foreground">
+        문항별 응답은 전체 조회 권한이 필요합니다.
+      </p>
+    );
   }
 
   return (
     <details className="mt-4 rounded-2xl border border-border bg-background p-4">
-      <summary className="cursor-pointer text-sm font-bold">유형별 문항 응답 보기</summary>
-      <p className="mt-3 text-xs text-muted-foreground">현재 검사 문항 기준 · 원래 문항 번호와 저장된 점수입니다. 미응답은 점수를 부여하지 않습니다.</p>
+      <summary className="cursor-pointer text-sm font-bold">
+        유형별 문항 응답 보기
+      </summary>
+      <p className="mt-3 text-xs text-muted-foreground">
+        현재 검사 문항 기준 · 원래 문항 번호와 저장된 점수입니다. 미응답은
+        점수를 부여하지 않습니다.
+      </p>
       <div className="mt-4 space-y-3">
         {grouped.answersByType.map(group => (
-          <details key={group.type} className="rounded-xl border border-border p-3">
-            <summary className="cursor-pointer text-sm font-bold text-primary">{group.label}</summary>
+          <details
+            key={group.type}
+            className="rounded-xl border border-border p-3"
+          >
+            <summary className="cursor-pointer text-sm font-bold text-primary">
+              {group.label}
+            </summary>
             <ul className="mt-3 space-y-2 text-sm leading-relaxed">
               {group.answers.map(answer => (
                 <li key={answer.questionId}>
@@ -92,8 +123,13 @@ export function GroupedAnswerDetails({ answers, hasFullAccess }: {
         ))}
         {grouped.unknownAnswers.length > 0 && (
           <details className="rounded-xl border border-border p-3">
-            <summary className="cursor-pointer text-sm font-bold">분류되지 않은 기존 응답</summary>
-            <p className="mt-2 text-xs text-muted-foreground">현재 문항 목록에 없는 ID입니다. 유형이나 문항 내용을 추정하지 않았습니다.</p>
+            <summary className="cursor-pointer text-sm font-bold">
+              분류되지 않은 기존 응답
+            </summary>
+            <p className="mt-2 text-xs text-muted-foreground">
+              현재 문항 목록에 없는 ID입니다. 유형이나 문항 내용을 추정하지
+              않았습니다.
+            </p>
             <ul className="mt-3 space-y-2 text-sm leading-relaxed">
               {grouped.unknownAnswers.map(answer => (
                 <li key={answer.questionId}>
@@ -119,10 +155,12 @@ export default function ResultsDashboard() {
   const [requiresAccessKey, setRequiresAccessKey] = useState(false);
   const [hasFullAccess, setHasFullAccess] = useState(false);
   const [query, setQuery] = useState("");
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadSubmissions = useCallback(
     async (key = accessKey) => {
       setIsLoading(true);
+      setLoadError(null);
 
       try {
         const response = await fetch("/api/result-submissions?limit=300", {
@@ -151,7 +189,16 @@ export default function ResultsDashboard() {
           sessionStorage.setItem(ACCESS_KEY_STORAGE_KEY, key);
         }
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "결과 목록을 불러오지 못했습니다.");
+        setLoadError(
+          error instanceof Error
+            ? error.message
+            : "결과 목록을 불러오지 못했습니다."
+        );
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "결과 목록을 불러오지 못했습니다."
+        );
       } finally {
         setIsLoading(false);
       }
@@ -167,7 +214,7 @@ export default function ResultsDashboard() {
     const normalizedQuery = query.trim().toLowerCase();
     if (!normalizedQuery) return submissions;
 
-    return submissions.filter((submission) => {
+    return submissions.filter(submission => {
       const haystack = [
         submission.counselorName,
         submission.respondentPhone,
@@ -194,237 +241,300 @@ export default function ResultsDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-grainy bg-background text-foreground antialiased">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
-        <div className="container max-w-6xl h-16 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => {
-              window.location.href = "/";
-            }}
-            className="flex items-center gap-2 text-left"
-          >
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
-              <Compass className="w-5 h-5" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-sans font-extrabold text-base tracking-tight text-primary">
-                마음나침반연구소
-              </span>
-              <span className="text-[10px] text-muted-foreground font-medium tracking-widest uppercase">
-                Result Inbox
-              </span>
-            </div>
-          </button>
-
+    <div className="rd-dashboard">
+      <a href="#results-main" className="rd-skip">
+        본문으로 바로가기
+      </a>
+      <header className="rd-header">
+        <div className="rd-shell rd-header-inner">
+          <a href="/" className="rd-brand" aria-label="마음나침반연구소 홈">
+            <Compass size={32} strokeWidth={1.3} aria-hidden="true" />
+            <span>
+              <strong>마음나침반연구소</strong>
+              <small>Mind Compass Lab</small>
+            </span>
+          </a>
+          <span className="rd-workspace">상담사 전용 · 결과 관리</span>
           <Button
             variant="outline"
-            size="sm"
             onClick={() => loadSubmissions()}
             disabled={isLoading || requiresAccessKey}
-            className="h-9 rounded-lg gap-1.5 text-xs font-bold"
+            className="rd-refresh"
           >
-            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCcw className="w-3.5 h-3.5" />}
+            {isLoading ? (
+              <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+            ) : (
+              <RefreshCcw size={16} aria-hidden="true" />
+            )}{" "}
             새로고침
           </Button>
         </div>
       </header>
-
-      <main className="container max-w-6xl py-8 md:py-10 space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-2">
-            <Badge variant="outline" className="rounded-full border-primary/20 bg-primary/10 text-primary px-3 py-1">
-              상담 결과 수신함
-            </Badge>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-foreground">
-                상담사에게 전송된 검사 결과
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                결과 화면에서 보낸 설문자 정보와 애니어그램 분석 결과가 이곳에 모입니다.
-              </p>
-            </div>
-          </div>
-
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3 top-1/2 w-4 h-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="상담사, 이름, 전화번호 검색"
-              className="h-11 rounded-xl border-border bg-card pl-9"
-            />
-          </div>
+      <main id="results-main" className="rd-shell rd-main">
+        <div className="rd-heading">
+          <p className="rd-eyebrow">상담 기록 / 검사 결과</p>
+          <h1>받은 검사 결과</h1>
+          <p>
+            설문자를 찾고, 결과를 확인하세요. 상담에 필요한 문항 응답은 TXT
+            파일로 저장할 수 있습니다.
+          </p>
         </div>
-
-        {requiresAccessKey && (
-          <Card className="border-border bg-card shadow-md rounded-3xl overflow-hidden">
-            <CardContent className="p-6 md:p-8 space-y-5">
-              <div className="flex items-start gap-4">
-                <div className="w-11 h-11 rounded-2xl border border-primary/20 bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <KeyRound className="w-5 h-5" />
-                </div>
-                <div className="space-y-1">
-                  <h2 className="text-lg font-extrabold text-foreground">결과 조회 접근키가 필요합니다</h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    관리자에게 전달받은 접근키를 입력하면 수신된 결과를 확인할 수 있습니다.
-                  </p>
-                </div>
-              </div>
-              <form onSubmit={handleAccessKeySubmit} className="flex flex-col gap-3 sm:flex-row">
+        {requiresAccessKey ? (
+          <section className="rd-state rd-lock" aria-labelledby="access-title">
+            <KeyRound size={28} aria-hidden="true" />
+            <p className="rd-eyebrow">보호된 상담 기록</p>
+            <h2 id="access-title">접근키를 입력해 주세요</h2>
+            <p>
+              개인정보 보호를 위해 결과 조회 권한을 확인합니다.
+              <br />
+              관리자에게 전달받은 접근키로 결과를 열 수 있습니다.
+            </p>
+            <form onSubmit={handleAccessKeySubmit}>
+              <label htmlFor="result-access-key">결과 조회 접근키</label>
+              <div className="rd-key-row">
                 <Input
+                  id="result-access-key"
                   type="password"
                   value={pendingAccessKey}
-                  onChange={(event) => setPendingAccessKey(event.target.value)}
+                  onChange={event => setPendingAccessKey(event.target.value)}
                   placeholder="접근키 입력"
-                  className="h-12 rounded-xl border-border bg-background"
                   autoFocus
                 />
-                <Button
-                  type="submit"
-                  className="h-12 rounded-xl bg-primary px-6 font-bold text-primary-foreground hover:bg-primary/90"
-                  disabled={isLoading}
-                >
-                  {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
-                  결과 열기
+                <Button type="submit" disabled={isLoading}>
+                  <Eye size={16} aria-hidden="true" />
+                  {isLoading ? "확인 중…" : "결과 열기"}
                 </Button>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
-        {!requiresAccessKey && (
+              </div>
+            </form>
+          </section>
+        ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="rounded-3xl border-border bg-card shadow-sm">
-                <CardContent className="p-5">
-                  <p className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider">Total</p>
-                  <p className="text-3xl font-extrabold text-primary mt-2">{total}</p>
-                  <p className="text-xs text-muted-foreground mt-1">전체 수신 결과 수</p>
-                </CardContent>
-              </Card>
-              <Card className="rounded-3xl border-border bg-card shadow-sm">
-                <CardContent className="p-5">
-                  <p className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider">Latest</p>
-                  <p className="text-lg font-extrabold text-foreground mt-2">
-                    {latestSubmission ? formatDate(latestSubmission.createdAt) : "아직 없음"}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">가장 최근 수신 시간</p>
-                </CardContent>
-              </Card>
-              <Card className="rounded-3xl border-border bg-card shadow-sm">
-                <CardContent className="p-5">
-                  <p className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider">Access</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-primary" />
-                    <p className="text-lg font-extrabold text-foreground">
-                      {hasFullAccess ? "전체 조회" : "접근 제한"}
-                    </p>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">{hasFullAccess ? "전화번호 전체 표시 중" : "개인정보 및 문항별 응답 조회 제한"}</p>
-                </CardContent>
-              </Card>
+            <div className="rd-status" aria-live="polite">
+              <span>
+                <ShieldCheck size={17} aria-hidden="true" />
+                {isLoading
+                  ? "조회 권한 확인 중"
+                  : hasFullAccess
+                    ? "전체 조회 · 전화번호 전체 표시"
+                    : "접근 제한 · 개인정보와 문항 응답 보호"}
+              </span>
+              {!isLoading && !loadError && (
+                <span>
+                  전체 수신 <strong>{total}건</strong>
+                  {latestSubmission && (
+                    <> · 최근 {formatDate(latestSubmission.createdAt)}</>
+                  )}
+                </span>
+              )}
             </div>
-
+            <section className="rd-toolbar" aria-label="결과 검색">
+              <label htmlFor="result-search">결과 찾기</label>
+              <div className="rd-search-row">
+                <div className="rd-search-input">
+                  <Search size={18} aria-hidden="true" />
+                  <Input
+                    id="result-search"
+                    value={query}
+                    onChange={event => setQuery(event.target.value)}
+                    placeholder="이름, 상담사, 전화번호, 유형명 검색"
+                    aria-describedby="result-search-help"
+                  />
+                </div>
+                {query && (
+                  <Button variant="outline" onClick={() => setQuery("")}>
+                    검색 지우기
+                  </Button>
+                )}
+              </div>
+              <p id="result-search-help">
+                불러온 {submissions.length}건 안에서 검색합니다. 한 번에 최대
+                300건을 조회합니다.
+              </p>
+            </section>
+            {loadError && (
+              <div className="rd-error" role="alert">
+                <strong>결과를 불러오지 못했습니다.</strong>
+                <p>{loadError}</p>
+                <p>
+                  이전에 불러온 목록이 있다면 그대로 표시됩니다. 새로고침으로
+                  다시 시도해 주세요.
+                </p>
+                <Button variant="outline" onClick={() => loadSubmissions()}>
+                  다시 시도
+                </Button>
+              </div>
+            )}
             {isLoading ? (
-              <div className="rounded-3xl border border-border bg-card p-10 text-center shadow-sm">
-                <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin text-primary" />
-                <p className="text-sm font-bold text-muted-foreground">결과를 불러오는 중입니다.</p>
+              <div className="rd-state" role="status">
+                <Loader2 className="animate-spin" aria-hidden="true" />
+                <h2>결과를 불러오고 있습니다</h2>
+                <p>조회 권한과 수신된 기록을 확인하고 있어요.</p>
               </div>
             ) : filteredSubmissions.length === 0 ? (
-              <div className="rounded-3xl border border-border bg-card p-10 text-center shadow-sm">
-                <UserCheck className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                <p className="text-base font-extrabold text-foreground">
-                  {submissions.length === 0 ? "아직 수신된 결과가 없습니다." : "검색 결과가 없습니다."}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  결과 화면에서 상담사에게 보내기를 누르면 이 목록에 추가됩니다.
-                </p>
-              </div>
+              !loadError && (
+                <div className="rd-state">
+                  <UserCheck size={30} aria-hidden="true" />
+                  <h2>
+                    {submissions.length === 0
+                      ? "아직 받은 검사 결과가 없습니다"
+                      : "일치하는 결과가 없습니다"}
+                  </h2>
+                  <p>
+                    {submissions.length === 0
+                      ? "설문자가 검사 결과 화면에서 ‘상담사에게 보내기’를 누르면 이곳에 표시됩니다."
+                      : "이름이나 전화번호 일부로 다시 검색하거나 검색어를 지워 보세요."}
+                  </p>
+                  {query && (
+                    <Button variant="outline" onClick={() => setQuery("")}>
+                      전체 목록 보기
+                    </Button>
+                  )}
+                </div>
+              )
             ) : (
-              <div className="space-y-4">
-                {filteredSubmissions.map((submission) => (
-                  <Card key={submission.id} className="rounded-3xl border-border bg-card shadow-sm overflow-hidden">
-                    <CardContent className="p-5 md:p-6">
-                      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="space-y-4 min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge className="rounded-full bg-primary text-primary-foreground">
-                              {submission.result.wingCode}
-                            </Badge>
-                            <Badge variant="outline" className="rounded-full border-accent/30 bg-accent/10 text-accent">
-                              {submission.result.wingName}
-                            </Badge>
-                            <span className="text-xs font-semibold text-muted-foreground">
-                              {formatDate(submission.createdAt)}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            <div className="rounded-2xl border border-border/70 bg-background p-3">
-                              <p className="text-[11px] font-extrabold text-muted-foreground">담당 상담사</p>
-                              <p className="text-sm font-bold text-foreground mt-1">{submission.counselorName}</p>
-                            </div>
-                            <div className="rounded-2xl border border-border/70 bg-background p-3">
-                              <p className="text-[11px] font-extrabold text-muted-foreground">설문자</p>
-                              <p className="text-sm font-bold text-foreground mt-1">
-                                {submission.participant.name || "이름 없음"}
-                                {submission.participant.age !== null && ` · 만 ${submission.participant.age}세`}
-                              </p>
-                            </div>
-                            <div className="rounded-2xl border border-border/70 bg-background p-3">
-                              <p className="text-[11px] font-extrabold text-muted-foreground">전화번호</p>
-                              <p className="text-sm font-bold text-foreground mt-1">{submission.respondentPhone}</p>
-                            </div>
-                            <div className="rounded-2xl border border-border/70 bg-background p-3">
-                              <p className="text-[11px] font-extrabold text-muted-foreground">주유형</p>
-                              <p className="text-sm font-bold text-foreground mt-1">
-                                {submission.result.primaryType}유형 {submission.result.primaryTypeName}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
-                            <p className="text-sm font-extrabold text-primary">
-                              {submission.result.report?.tagline ?? submission.result.wingTitle}
-                            </p>
-                            <p className="text-xs leading-relaxed text-muted-foreground mt-2 line-clamp-2">
-                              {submission.result.report?.summary ?? submission.result.wingTitle}
-                            </p>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2">
-                            {submission.result.rankedTypes.slice(0, 5).map((item, index) => (
-                              <span
-                                key={`${submission.id}-${item.type}`}
-                                className="rounded-full border border-border bg-background px-3 py-1 text-[11px] font-bold text-muted-foreground"
-                              >
-                                {index + 1}위 · {item.type}유형 {item.score}점
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
+              <section
+                aria-labelledby="result-list-title"
+                className="rd-results"
+              >
+                <div className="rd-list-heading">
+                  <h2 id="result-list-title">
+                    {query ? "검색 결과" : "수신 목록"}{" "}
+                    <span>{filteredSubmissions.length}건</span>
+                  </h2>
+                  <p>문서로 읽기: TXT · 원본 데이터: JSON</p>
+                </div>
+                {filteredSubmissions.map(submission => (
+                  <article
+                    key={submission.id}
+                    className="rd-record"
+                    aria-label={`${submission.participant.name || "이름 없음"} 검사 결과`}
+                  >
+                    <div className="rd-record-top">
+                      <div className="rd-person">
+                        <p className="rd-label">설문자</p>
+                        <h3>
+                          {submission.participant.name || "이름 없음"}
+                          <span>
+                            {submission.participant.age !== null &&
+                              `만 ${submission.participant.age}세`}
+                          </span>
+                        </h3>
+                        <time dateTime={submission.createdAt}>
+                          수신 {formatDate(submission.createdAt)}
+                        </time>
+                      </div>
+                      <div className="rd-type">
+                        <p className="rd-label">주유형</p>
+                        <strong>
+                          {submission.result.primaryType}유형 ·{" "}
+                          {submission.result.primaryTypeName}
+                        </strong>
+                        <p>
+                          날개 {submission.result.wingCode} ·{" "}
+                          {submission.result.wingName}
+                        </p>
+                      </div>
+                      <div className="rd-downloads">
+                        <TxtDownloadButton
+                          submission={submission}
+                          hasFullAccess={hasFullAccess}
+                        />
                         <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => downloadJson(submission, hasFullAccess)}
+                          variant="ghost"
                           disabled={!hasFullAccess}
-                          className="h-11 rounded-xl gap-2 text-xs font-bold lg:w-32"
+                          onClick={() =>
+                            downloadJson(submission, hasFullAccess)
+                          }
                         >
-                          <Download className="w-4 h-4 text-primary" />
                           JSON 다운로드
                         </Button>
-                        <TxtDownloadButton submission={submission} hasFullAccess={hasFullAccess} />
                       </div>
-                      <GroupedAnswerDetails answers={submission.answers} hasFullAccess={hasFullAccess} />
-                    </CardContent>
-                  </Card>
+                    </div>
+                    <dl className="rd-contact">
+                      <div>
+                        <dt>담당 상담사</dt>
+                        <dd>{submission.counselorName || "정보 없음"}</dd>
+                      </div>
+                      <div>
+                        <dt>전화번호</dt>
+                        <dd>{submission.respondentPhone || "정보 없음"}</dd>
+                      </div>
+                    </dl>
+                    {!hasFullAccess && (
+                      <p className="rd-restricted">
+                        접근 제한 상태에서는 다운로드할 수 없습니다.
+                      </p>
+                    )}
+                    <details className="rd-details">
+                      <summary>결과 설명과 유형별 점수 보기</summary>
+                      <div className="rd-detail-body">
+                        <div className="rd-report">
+                          <p className="rd-label">저장된 결과 설명</p>
+                          <h4>
+                            {submission.result.report?.tagline ??
+                              submission.result.wingTitle}
+                          </h4>
+                          <p>
+                            {submission.result.report?.summary ??
+                              submission.result.wingTitle}
+                          </p>
+                        </div>
+                        <h4>유형별 점수</h4>
+                        <p className="rd-help">
+                          전송 당시 저장된 점수와 순서입니다. 여기서 다시
+                          계산하지 않습니다.
+                        </p>
+                        {submission.result.rankedTypes.length ? (
+                          <ol className="rd-scores">
+                            {submission.result.rankedTypes.map(
+                              (item, index) => (
+                                <li key={`${submission.id}-${item.type}`}>
+                                  <span className="rd-rank">{index + 1}위</span>
+                                  <span>
+                                    {item.type}유형 {item.name}
+                                  </span>
+                                  <strong>{item.score}점</strong>
+                                </li>
+                              )
+                            )}
+                          </ol>
+                        ) : (
+                          <p className="rd-help">
+                            저장된 유형별 순위가 없습니다.
+                          </p>
+                        )}
+                        {submission.result.centers.length > 0 && (
+                          <>
+                            <h4>중심별 점수</h4>
+                            <ul className="rd-centers">
+                              {submission.result.centers.map(center => (
+                                <li key={center.label}>
+                                  <strong>{center.label}</strong>
+                                  <span>{center.theme}</span>
+                                  <span>
+                                    {center.score}점 · {center.percent}%
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                      </div>
+                    </details>
+                    <GroupedAnswerDetails
+                      answers={submission.answers}
+                      hasFullAccess={hasFullAccess}
+                    />
+                  </article>
                 ))}
-              </div>
+              </section>
             )}
           </>
         )}
+        <footer className="rd-footer">
+          상담 기록에는 개인정보가 포함되어 있습니다. 다운로드한 파일은 안전하게
+          보관해 주세요.
+        </footer>
       </main>
     </div>
   );
