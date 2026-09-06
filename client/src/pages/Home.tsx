@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import HomeLanding, { LandingHeader, LandingFooter } from "@/components/home/HomeLanding";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -561,9 +562,9 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-grainy bg-background text-foreground flex flex-col antialiased">
+    <div className={step === "landing" ? "mc-home min-h-screen flex flex-col" : "min-h-screen bg-grainy bg-background text-foreground flex flex-col antialiased"}>
       {/* 글로벌 상단 헤더 브랜딩 */}
-      <header className="sticky top-0 z-40 backdrop-blur-md bg-background/80 border-b border-border transition-all duration-300">
+      {step === "landing" ? <LandingHeader /> : <header className="sticky top-0 z-40 backdrop-blur-md bg-background/80 border-b border-border transition-all duration-300">
         <div className="container max-w-5xl h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer" onClick={handleReset}>
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
@@ -587,214 +588,22 @@ export default function Home() {
             )}
           </div>
         </div>
-      </header>
+      </header>}
 
       {/* 메인 콘텐츠 영역 */}
-      <main className="flex-1 flex flex-col justify-center py-8 md:py-12">
-        <div className={`container ${step === "result" ? "max-w-5xl" : "max-w-3xl"}`}>
+      <main id={step === "landing" ? "home-main" : undefined} tabIndex={step === "landing" ? -1 : undefined} className={step === "landing" ? "mc-main flex-1" : "flex-1 flex flex-col justify-center py-8 md:py-12"}>
+        <div className={step === "landing" ? "mc-main-container" : `container ${step === "result" ? "max-w-5xl" : "max-w-3xl"}`}>
           
           {/* ==================== 1. 고도화된 전문 소개 랜딩 페이지 ==================== */}
           {step === "landing" && (
-            <div className="space-y-10 animate-fade-in">
-              {/* 메인 히어로 배너 */}
-              <div className="relative rounded-3xl overflow-hidden border border-border shadow-xl bg-card">
-                <div className="aspect-[16/9] w-full relative">
-                  <img 
-                    src="https://d2xsxph8kpxj0f.cloudfront.net/310519663447477902/GxpY3fEmfUKNJ8D35WAotv/hero_forest_compass-TpNT9AJSiba9J2yScBLeno.webp" 
-                    alt="마음나침반연구소 숲속 나침반" 
-                    className="object-cover w-full h-full brightness-90"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex flex-col justify-end p-6 md:p-8">
-                    <span className="text-accent font-bold text-xs md:text-sm tracking-wider uppercase bg-white/10 backdrop-blur-md px-3 py-1 rounded-full w-fit mb-2 border border-white/20">
-                      정밀 성격 진단 솔루션
-                    </span>
-                    <h1 className="text-2xl md:text-4xl font-extrabold text-white leading-tight drop-shadow-sm">
-                      나의 진짜 본질과 잠재력을 깨우는<br />정밀 애니어그램 검사
-                    </h1>
-                  </div>
-                </div>
-                
-                <div className="p-6 md:p-8 space-y-6">
-                  <p className="text-base md:text-lg leading-relaxed text-muted-foreground font-light">
-                    단순한 1차원적 성격 분류를 넘어, 심리학적 동기와 방어기제, 그리고 <strong className="text-primary font-semibold">날개(Wing) 상호작용</strong>까지 반영한 국내에서 가장 정밀한 정적 애니어그램 검사입니다.<br /><br />
-                    마음나침반연구소의 전문 연구진이 설계한 본 진단은 스스로도 알아채지 못했던 내면의 핵심 공포와 욕구를 파헤치고, 보다 균형 잡힌 삶을 살아갈 수 있도록 명확한 방향을 제안합니다.
-                  </p>
-
-                  {/* 전문성 검증 지표 섹션 */}
-                  <div className="grid grid-cols-3 gap-4 py-4 border-y border-border/60">
-                    <div className="text-center space-y-1">
-                      <span className="block text-xl md:text-2xl font-extrabold text-primary">81문항</span>
-                      <span className="text-[10px] md:text-xs text-muted-foreground">정밀 리커트 척도</span>
-                    </div>
-                    <div className="text-center space-y-1 border-x border-border/60">
-                      <span className="block text-xl md:text-2xl font-extrabold text-primary">18개</span>
-                      <span className="text-[10px] md:text-xs text-muted-foreground">주유형 & 날개 조합</span>
-                    </div>
-                    <div className="text-center space-y-1">
-                      <span className="block text-xl md:text-2xl font-extrabold text-primary">99.4%</span>
-                      <span className="text-[10px] md:text-xs text-muted-foreground">알고리즘 매칭 신뢰도</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 추가 이미지 섹션: 전문 심리 분석 프로세스 */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="border-border shadow-md rounded-3xl overflow-hidden bg-card">
-                  <div className="aspect-[4/3] w-full relative">
-                    <img 
-                      src="https://d2xsxph8kpxj0f.cloudfront.net/310519663447477902/GxpY3fEmfUKNJ8D35WAotv/mind_map-J5ryK6r88v2N6nu2vv4AiN.webp" 
-                      alt="마음나침반 분석 구조" 
-                      className="object-cover w-full h-full"
-                    />
-                  </div>
-                  <CardContent className="p-5 space-y-2">
-                    <h3 className="font-extrabold text-base text-foreground flex items-center gap-1.5">
-                      <Activity className="w-4 h-4 text-primary" /> 다차원 심리 매핑
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      머리(5,6,7), 가슴(2,3,4), 장(8,9,1) 세 가지 중심 에너지를 기반으로 개인의 인지적, 감정적, 신체적 반응 패턴을 종합 분석합니다.
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border shadow-md rounded-3xl overflow-hidden bg-card">
-                  <div className="aspect-[4/3] w-full relative">
-                    <img 
-                      src="https://d2xsxph8kpxj0f.cloudfront.net/310519663447477902/GxpY3fEmfUKNJ8D35WAotv/professional_analysis-HUzJDk8v8cedaaHKLv9kuc.webp" 
-                      alt="전문가 해설지 제공" 
-                      className="object-cover w-full h-full"
-                    />
-                  </div>
-                  <CardContent className="p-5 space-y-2">
-                    <h3 className="font-extrabold text-base text-foreground flex items-center gap-1.5">
-                      <UserCheck className="w-4 h-4 text-accent" /> 날개(Wing) 정밀 프로파일
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      단순히 한 가지 성격으로만 규정하지 않습니다. 본인의 잠재의식 속에서 보조 역할을 수행하는 날개 성향을 판별하여 입체적인 프로필을 제공합니다.
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* 검사 단계 안내 타임라인 */}
-              <Card className="border-border shadow-md rounded-3xl bg-card">
-                <CardContent className="p-6 md:p-8 space-y-6">
-                  <h3 className="font-extrabold text-lg text-foreground text-center">검사 진행 프로세스</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
-                    {[
-                      { step: "01", title: "결제 및 코드적용", desc: "간편결제 또는 프로모션 코드" },
-                      { step: "02", title: "인적사항 기재", desc: "생년월일 및 닉네임 입력" },
-                      { step: "03", title: "81문항 자가진단", desc: "약 10~15분 소요" },
-                      { step: "04", title: "마음 처방전 수령", desc: "맞춤형 리포트 분석" }
-                    ].map((item, idx) => (
-                      <div key={idx} className="bg-secondary/30 p-4 rounded-2xl border border-border/40 text-center space-y-1 relative">
-                        <span className="text-xs font-extrabold text-primary bg-primary/10 px-2 py-0.5 rounded-md">{item.step}</span>
-                        <h4 className="font-bold text-sm text-foreground pt-1">{item.title}</h4>
-                        <p className="text-[11px] text-muted-foreground">{item.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* 서비스 신청 및 추천인 코드 영역 */}
-              <Card className="border-border shadow-lg rounded-3xl overflow-hidden bg-card">
-                <CardContent className="p-6 md:p-8 space-y-6">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-border">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold bg-accent/10 text-accent px-2.5 py-1 rounded-md">SPECIAL OFFER</span>
-                        <span className="text-xs text-muted-foreground">정밀 심리 검사 및 해설지 제공</span>
-                      </div>
-                      <h2 className="text-xl md:text-2xl font-bold text-foreground">애니어그램 1회 검사 + 결과 리포트</h2>
-                      <p className="text-xs text-muted-foreground">나의 무의식 공포, 욕구, 스트레스 대처법, 어울리는 MBTI 매칭 정보 포함</p>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-sm line-through text-muted-foreground font-medium">정가 79,000원</span>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl md:text-3xl font-extrabold text-primary">49,000</span>
-                        <span className="text-base font-bold text-primary">원</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {/* 1. 메인 유료 결제 및 시작 버튼 */}
-                    <Button 
-                      onClick={handleMainCTAClick} 
-                      className="w-full h-14 text-base font-bold rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-spring active-spring flex items-center justify-center gap-2"
-                    >
-                      {isFreeAccess ? (
-                        <>
-                          <Sparkles className="w-5 h-5 text-accent animate-pulse" />
-                          무료 혜택으로 검사 시작하기
-                        </>
-                      ) : (
-                        <>
-                          <CreditCard className="w-5 h-5" />
-                          49,000원 결제하고 검사 시작하기
-                        </>
-                      )}
-                      <ArrowRight className="w-5 h-5" />
-                    </Button>
-
-                    {/* 2. 접힘(토글) 처리된 프로모션 코드 입력란 */}
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={() => setIsPromoExpanded(!isPromoExpanded)}
-                        className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        <span>추천인 / 제휴 프로모션 코드가 있으신가요?</span>
-                        {isPromoExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                      </button>
-
-                      <AnimatePresence>
-                        {isPromoExpanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.25, ease: "easeInOut" }}
-                            className="overflow-hidden"
-                          >
-                            <div className="mt-3 bg-secondary/30 p-4 rounded-2xl border border-border/60 space-y-3">
-                              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                                <Sparkles className="w-4 h-4 text-accent" />
-                                <span>제휴 파트너 코드 적용</span>
-                              </div>
-                              <p className="text-xs text-muted-foreground leading-relaxed">
-                                파트너십 제휴 기관의 추천인 코드나 무료 QR 코드를 소지하고 계신가요? 코드를 입력하시면 <strong className="text-accent font-semibold">전액 100% 무료</strong>로 검사를 진행할 수 있습니다.
-                              </p>
-                              
-                              <div className="flex gap-2 pt-1">
-                                <Input 
-                                  type="text" 
-                                  placeholder="추천인 코드를 입력하세요" 
-                                  value={userInfo.promoCode}
-                                  onChange={(e) => setUserInfo(prev => ({ ...prev, promoCode: e.target.value }))}
-                                  className="rounded-xl border-border bg-background focus:ring-primary/20"
-                                />
-                                {userInfo.promoCode && (
-                                  <div className="flex items-center shrink-0 px-3 py-1.5 text-xs font-bold rounded-xl border bg-background">
-                                    {isFreeAccess ? (
-                                      <span className="text-emerald-600 flex items-center gap-1"><Check className="w-3 h-3" /> 적용됨</span>
-                                    ) : (
-                                      <span className="text-amber-600 flex items-center gap-1"><Info className="w-3 h-3" /> 미승인</span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <HomeLanding
+              isFreeAccess={isFreeAccess}
+              isPromoExpanded={isPromoExpanded}
+              promoCode={userInfo.promoCode}
+              onPromoToggle={() => setIsPromoExpanded(prev => !prev)}
+              onPromoChange={promoCode => setUserInfo(prev => ({ ...prev, promoCode }))}
+              onStart={handleMainCTAClick}
+            />
           )}
 
           {/* ==================== 2. 생년월일 및 개인정보 동의 ==================== */}
@@ -1679,30 +1488,20 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      {/* ==================== 5. 가상 간편결제 모달 팝업 ==================== */}
-      <AnimatePresence>
-        {isPaymentModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* 반투명 배경 레이어 */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => !isPaying && setIsPaymentModalOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            
-            {/* 결제창 팝업 카드 */}
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0, y: 15 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 15 }}
-              transition={{ type: "spring", stiffness: 350, damping: 25 }}
-              className="relative w-full max-w-md bg-card border border-border rounded-3xl shadow-2xl overflow-hidden z-10"
-            >
+      {/* Existing simulated payment flow, with keyboard focus and Escape support. */}
+      <Dialog open={isPaymentModalOpen} onOpenChange={open => { if (!isPaying) setIsPaymentModalOpen(open); }}>
+        <DialogContent
+          className="mc-payment-dialog w-full max-w-md sm:max-w-md bg-card border border-border rounded-3xl shadow-2xl p-0 gap-0"
+          showCloseButton={false}
+          onCloseAutoFocus={event => {
+            event.preventDefault();
+            document.getElementById("homepage-start-button")?.focus();
+          }}
+        >
               {/* 상단 닫기 버튼 */}
               <button 
                 type="button"
+                aria-label="결제창 닫기"
                 onClick={() => !isPaying && setIsPaymentModalOpen(false)}
                 className="absolute top-4 right-4 p-2 rounded-full text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
                 disabled={isPaying}
@@ -1715,8 +1514,8 @@ export default function Home() {
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 mx-auto mb-3">
                     <CreditCard className="w-6 h-6" />
                   </div>
-                  <h3 className="text-xl font-extrabold text-foreground">마음나침반 정밀 진단 결제</h3>
-                  <p className="text-xs text-muted-foreground">안전한 가상 결제 환경에서 시뮬레이션이 진행됩니다.</p>
+                  <DialogTitle className="text-xl font-extrabold text-foreground">마음나침반 정밀 진단 결제</DialogTitle>
+                  <DialogDescription className="text-xs text-muted-foreground">안전한 가상 결제 환경에서 시뮬레이션이 진행됩니다.</DialogDescription>
                 </div>
 
                 {/* 결제 금액 안내 */}
@@ -1741,6 +1540,7 @@ export default function Home() {
                           key={method.id}
                           type="button"
                           onClick={() => !isPaying && setSelectedPaymentMethod(method.id as PaymentMethod)}
+                          aria-pressed={isSelected}
                           className={`flex flex-col items-start p-3.5 rounded-2xl border text-left transition-all relative transition-spring active-spring ${method.color} ${
                             isSelected 
                               ? "border-primary ring-2 ring-primary/20 bg-background font-bold scale-[1.02]" 
@@ -1786,13 +1586,11 @@ export default function Home() {
                   )}
                 </Button>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+        </DialogContent>
+      </Dialog>
 
       {/* 글로벌 푸터 */}
-      <footer className="border-t border-border bg-card/40 py-8 text-center text-xs text-muted-foreground/80 space-y-2">
+      {step === "landing" ? <LandingFooter /> : <footer className="border-t border-border bg-card/40 py-8 text-center text-xs text-muted-foreground/80 space-y-2">
         <div className="container max-w-5xl">
           <div className="flex justify-center items-center gap-2 mb-3">
             <Compass className="w-4 h-4 text-primary" />
@@ -1803,7 +1601,7 @@ export default function Home() {
             본 테스트는 애니어그램 학술적 이론에 기반하여 마음나침반연구소에서 MZ세대 성향에 맞춰 새롭게 재구성한 약식 테스트입니다. 정밀 상담 및 임상 분석 대용으로 사용될 수 없습니다.
           </p>
         </div>
-      </footer>
+      </footer>}
     </div>
   );
 }

@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { buildSubmissionExport } from "@/lib/groupedAnswers";
+import { downloadTxt } from "@/lib/submissionTxt";
 import type { ResultSubmission, ResultSubmissionListResponse } from "@shared/resultSubmissions";
 import {
   Compass,
@@ -29,8 +31,10 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-function downloadJson(submission: ResultSubmission) {
-  const blob = new Blob([JSON.stringify(submission, null, 2)], {
+export function downloadJson(submission: ResultSubmission, hasFullAccess: boolean) {
+  const exported = buildSubmissionExport(submission, hasFullAccess);
+  if (!exported) return;
+  const blob = new Blob([JSON.stringify(exported, null, 2)], {
     type: "application/json",
   });
   const url = URL.createObjectURL(blob);
@@ -42,6 +46,68 @@ function downloadJson(submission: ResultSubmission) {
   URL.revokeObjectURL(url);
 }
 
+export function TxtDownloadButton({ submission, hasFullAccess }: {
+  submission: ResultSubmission;
+  hasFullAccess: boolean;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={() => { if (hasFullAccess) downloadTxt(submission, hasFullAccess); }}
+      disabled={!hasFullAccess}
+      className="h-11 rounded-xl gap-2 text-xs font-bold lg:w-32"
+    >
+      <Download className="w-4 h-4 text-primary" />
+      TXT 다운로드
+    </Button>
+  );
+}
+
+export function GroupedAnswerDetails({ answers, hasFullAccess }: {
+  answers: ResultSubmission["answers"];
+  hasFullAccess: boolean;
+}) {
+  const grouped = useMemo(() => buildSubmissionExport({ answers }, hasFullAccess), [answers, hasFullAccess]);
+  if (!grouped) {
+    return <p className="mt-4 text-xs text-muted-foreground">문항별 응답은 전체 조회 권한이 필요합니다.</p>;
+  }
+
+  return (
+    <details className="mt-4 rounded-2xl border border-border bg-background p-4">
+      <summary className="cursor-pointer text-sm font-bold">유형별 문항 응답 보기</summary>
+      <p className="mt-3 text-xs text-muted-foreground">현재 검사 문항 기준 · 원래 문항 번호와 저장된 점수입니다. 미응답은 점수를 부여하지 않습니다.</p>
+      <div className="mt-4 space-y-3">
+        {grouped.answersByType.map(group => (
+          <details key={group.type} className="rounded-xl border border-border p-3">
+            <summary className="cursor-pointer text-sm font-bold text-primary">{group.label}</summary>
+            <ul className="mt-3 space-y-2 text-sm leading-relaxed">
+              {group.answers.map(answer => (
+                <li key={answer.questionId}>
+                  {`${answer.questionId}. ${answer.questionText} - ${answer.status === "answered" ? `${answer.score}점` : answer.status === "missing" ? "미응답" : "점수 형식 확인 필요 (원본 JSON 참조)"}`}
+                </li>
+              ))}
+            </ul>
+          </details>
+        ))}
+        {grouped.unknownAnswers.length > 0 && (
+          <details className="rounded-xl border border-border p-3">
+            <summary className="cursor-pointer text-sm font-bold">분류되지 않은 기존 응답</summary>
+            <p className="mt-2 text-xs text-muted-foreground">현재 문항 목록에 없는 ID입니다. 유형이나 문항 내용을 추정하지 않았습니다.</p>
+            <ul className="mt-3 space-y-2 text-sm leading-relaxed">
+              {grouped.unknownAnswers.map(answer => (
+                <li key={answer.questionId}>
+                  {`${answer.questionId}. 문항 정보 없음 - ${typeof answer.score === "number" && Number.isFinite(answer.score) ? `${answer.score}점` : answer.score == null ? "미응답" : "점수 형식 확인 필요 (원본 JSON 참조)"}`}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </div>
+    </details>
+  );
+}
+
 export default function ResultsDashboard() {
   const [submissions, setSubmissions] = useState<ResultSubmission[]>([]);
   const [total, setTotal] = useState(0);
@@ -51,7 +117,7 @@ export default function ResultsDashboard() {
   );
   const [pendingAccessKey, setPendingAccessKey] = useState(accessKey);
   const [requiresAccessKey, setRequiresAccessKey] = useState(false);
-  const [hasFullAccess, setHasFullAccess] = useState(true);
+  const [hasFullAccess, setHasFullAccess] = useState(false);
   const [query, setQuery] = useState("");
 
   const loadSubmissions = useCallback(
@@ -255,7 +321,7 @@ export default function ResultsDashboard() {
                       {hasFullAccess ? "전체 조회" : "접근 제한"}
                     </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">전화번호 전체 표시 중</p>
+                  <p className="text-xs text-muted-foreground mt-1">{hasFullAccess ? "전화번호 전체 표시 중" : "개인정보 및 문항별 응답 조회 제한"}</p>
                 </CardContent>
               </Card>
             </div>
@@ -342,13 +408,16 @@ export default function ResultsDashboard() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => downloadJson(submission)}
+                          onClick={() => downloadJson(submission, hasFullAccess)}
+                          disabled={!hasFullAccess}
                           className="h-11 rounded-xl gap-2 text-xs font-bold lg:w-32"
                         >
                           <Download className="w-4 h-4 text-primary" />
                           JSON 다운로드
                         </Button>
+                        <TxtDownloadButton submission={submission} hasFullAccess={hasFullAccess} />
                       </div>
+                      <GroupedAnswerDetails answers={submission.answers} hasFullAccess={hasFullAccess} />
                     </CardContent>
                   </Card>
                 ))}

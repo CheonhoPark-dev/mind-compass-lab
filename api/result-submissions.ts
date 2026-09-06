@@ -216,7 +216,7 @@ async function handleGet(request: Request) {
         }
       })
     )
-  ).filter((item): item is ResultSubmission => Boolean(item));
+  ).filter((item) => item !== null);
 
   return jsonResponse({
     submissions,
