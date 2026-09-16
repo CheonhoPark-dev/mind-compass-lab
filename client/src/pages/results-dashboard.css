@@ -228,6 +228,12 @@
   gap: 2px;
   min-width: 150px;
 }
+.rd-report-downloads {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 4px;
+}
 .rd-dashboard .rd-txt {
   background: var(--rd-green);
   color: #fffefa;
@@ -509,8 +515,18 @@
   }
   .rd-downloads {
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     gap: 10px;
+  }
+  .rd-report-downloads {
+    flex: 1 0 100%;
+    flex-direction: row;
+    margin-bottom: 0;
+    gap: 10px;
+  }
+  .rd-report-downloads > button {
+    flex: 1;
   }
   .rd-downloads .rd-txt {
     flex: 1;

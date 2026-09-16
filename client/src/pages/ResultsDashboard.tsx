@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "./results-dashboard.css";
+import { ReportDownloadButtons } from "@/components/ReportDownloadButtons";
 import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
@@ -401,7 +402,7 @@ export default function ResultsDashboard() {
                     {query ? "검색 결과" : "수신 목록"}{" "}
                     <span>{filteredSubmissions.length}건</span>
                   </h2>
-                  <p>문서로 읽기: TXT · 원본 데이터: JSON</p>
+                  <p>한 장 요약: PDF·PNG · 문항 응답: TXT · 원본: JSON</p>
                 </div>
                 {filteredSubmissions.map(submission => (
                   <article
@@ -435,6 +436,10 @@ export default function ResultsDashboard() {
                         </p>
                       </div>
                       <div className="rd-downloads">
+                        <ReportDownloadButtons
+                          submission={submission}
+                          hasFullAccess={hasFullAccess}
+                        />
                         <TxtDownloadButton
                           submission={submission}
                           hasFullAccess={hasFullAccess}
