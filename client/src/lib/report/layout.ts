@@ -238,7 +238,7 @@ export function layoutReport(
     );
   }
   text(
-    "유형별 원점수 · 공통 표시축 (만점 아님)",
+    "유형별 응답 점수",
     left + 8,
     plotBottom + 34,
     10.5,
@@ -247,7 +247,7 @@ export function layoutReport(
   );
   const asideX = left + chartWidth + 17,
     asideWidth = right - asideX;
-  text("저장된 대표 유형", asideX, y, 10.5, false, MUTED);
+  text("대표 유형", asideX, y, 10.5, false, MUTED);
   text(
     model.primaryType === null ? MISSING : `${model.primaryType}유형`,
     asideX,
